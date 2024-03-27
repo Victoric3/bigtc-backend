@@ -1,6 +1,5 @@
 const { Client } = require('elasticsearch');
 const Story = require('../Models/story')
-const Exam = require('../Models/exam')
 
 // Elasticsearch client
 const esClient = new Client({
@@ -101,46 +100,10 @@ exports.autoSyncElastic = async () => {
           }
         }
       });
-
-      const examChangeSteam = await Exam.watch()
-       // Listen for changes in the 'stories' collection
-       examChangeSteam.on('change', async (change) => {
-        if (change.operationType === 'insert' || change.operationType === 'update') {
-          // Fetch only the titles of the modified/inserted documents
-          const title = await Exam
-          .findOne({ _id: change.documentKey._id })
-          .select({ name: 1, _id: 1 })
-          .lean()
-          .exec();
-                    
-          // Index the titles in Elasticsearch
-          try {
-              await esClient.index({
-                index: 'kingsheart-exam-search-suggestion',
-                id: change.documentKey._id.toString(),
-                body: { title: title.name, id: title._id },
-              });
-          } catch (e) {
-            console.error(e);
-          }
-        } else if (change.operationType === 'delete') {
-          // Delete the title from Elasticsearch
-          const docId = change.documentKey._id.toString()
-
-          try {
-            await esClient.delete({
-              index: 'kingsheart-exam-search-suggestion',
-              id: docId,
-            });
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  }catch(err){
+    console.error(err)
+  }
+}
   
 
 
